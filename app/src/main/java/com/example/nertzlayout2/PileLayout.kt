@@ -35,6 +35,9 @@ open class PileLayout(val parent: ViewGroup, color: Int,
     // Removes cards from fromPile starting with startingAt and adds them to this pile.
     // Resizes the moved cards but does not change their positions.
     fun transfer(fromPile: PileLayout, startingAt: Int) {
+        if (BuildConfig.DEBUG && fromPile == this) {
+            error("transfer: source and destination piles are the same")
+        }
         while (fromPile.size > startingAt) {
             fromPile.cards.removeAt(startingAt).let {
                 resizeView(it)

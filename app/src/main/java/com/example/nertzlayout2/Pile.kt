@@ -18,6 +18,9 @@ abstract class Pile {
     }
 
     fun transfer(fromPile: Pile, startingAt: Int) {
+        if (BuildConfig.DEBUG && fromPile == this) {
+            error("transfer: source and destination piles are the same")
+        }
         while (fromPile.size > startingAt) {
             fromPile.cards.removeAt(startingAt).let {
                 it.pile = this

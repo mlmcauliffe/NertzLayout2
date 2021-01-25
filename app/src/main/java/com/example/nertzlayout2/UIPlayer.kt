@@ -62,7 +62,7 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
                     }
                 }
 
-                val destination = if (newPile == null) {
+                val destination = if (newPile == null || newPile.first == card.pile) {
                     ncv.pile
                 } else {
                     newPile.first.transfer(card)
