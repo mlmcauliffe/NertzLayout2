@@ -3,7 +3,8 @@ package com.example.nertzlayout2
 import android.view.View
 import android.view.ViewGroup
 
-class StagedMove(var distanceX: Int = 0, var distanceY: Int = 0)
+class StagedMove(val pile: PileLayout, val startingAt: Int,
+                 val distanceX: Int, val distanceY: Int)
 
 open class PileLayout(val parent: ViewGroup, color: Int,
                       val x: Int, val y: Int, val width: Int, val baseHeight: Int) {
@@ -90,9 +91,25 @@ open class PileLayout(val parent: ViewGroup, color: Int,
 
     // Calculates the x- and y-distance from the given card's current location to its correction
     // location for this pile.
-    fun stageMove(ncv: NertzCardView, stage: StagedMove) {
-        stage.distanceX = x - ncv.x.toInt()
-        stage.distanceY = y + additionalHeight(size + 1) - ncv.y.toInt()
+    fun stageReposition(firstCard: NertzCardView): StagedMove {
+        for (idx in firstCard.posInPile until size) {
+            cards[idx].apply {
+                animationStartX = x.toInt()
+                animationStartY = y.toInt()
+            }
+        }
+        return StagedMove(this, firstCard.posInPile,
+                x - firstCard.x.toInt(),
+                y + additionalHeight(firstCard.posInPile) - firstCard.y.toInt())
+    }
+
+    // Move all cards starting at startingAt by the given distanceX and distanceY
+    fun animateMove(startingAt: Int, distanceX: Int, distanceY: Int) {
+        for (idx in startingAt until size) {
+            val ncl = cards[idx]
+            ncl.x = (ncl.animationStartX + distanceX).toFloat()
+            ncl.y = (ncl.animationStartY + distanceY).toFloat()
+        }
     }
 
     // Raises the cards starting at startingAt in the view hierarchy

@@ -35,13 +35,13 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
     }
 
     val context: Context get() = layout.context
-    var stage = StagedMove()
-    var animationInProgress = false
+    var stage: StagedMove? = null
 
     fun listener(card: NertzCard, ncv: NertzCardView): View.OnTouchListener {
         val listener = FullOnGestureListenerAdapter(object: FullOnGestureListener() {
             override fun onDown(e: MotionEvent): Boolean {
-                if (animationInProgress) {
+                if (stage != null) {
+                    // Don't accept UI actions while animation is in progress
                     return false
                 }
                 ncv.pile.raise(ncv.posInPile)
@@ -72,25 +72,27 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
                     }
                     newPile.second
                 }
-                destination.reposition(ncv)
+                //destination.reposition(ncv)
+                val stage = destination.stageReposition(ncv)
+                animateStagedMove(stage)
             }
         })
         return FullGestureDetector(context, listener)
     }
 
-    fun animateStagedMove(pile: PileLayout, startingAt: Int, stage: StagedMove) {
+    fun animateStagedMove(stage: StagedMove) {
         val animator = ValueAnimator.ofFloat(0f, 1f)
-        animator.setDuration(2000)
+        animator.setDuration(100)
         animator.addUpdateListener(
             ValueAnimatorAdapter({ fraction ->
-                pile.move(startingAt, (stage.distanceX * fraction).toInt(),
+                stage.pile.animateMove(stage.startingAt, (stage.distanceX * fraction).toInt(),
                         (stage.distanceY * fraction).toInt())
             }, {
-                pile.reposition(startingAt)
-                animationInProgress = false
+                stage.pile.reposition(stage.startingAt)
+                this.stage = null
             })
         )
-        animationInProgress = true
+        this.stage = stage
         animator.start()
     }
 
