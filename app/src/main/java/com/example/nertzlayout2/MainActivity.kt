@@ -43,6 +43,6 @@ class MainActivity : AppCompatActivity() {
             0.2f,
             1.0f,
             2f,
-            dpToPx(10))
+            dpToPx(20))
     }
 }

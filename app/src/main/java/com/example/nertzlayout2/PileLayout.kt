@@ -2,6 +2,7 @@ package com.example.nertzlayout2
 
 import android.view.View
 import android.view.ViewGroup
+import androidx.cardview.widget.CardView
 
 class StagedMove(val pile: PileLayout, val startingAt: Int,
                  val distanceX: Int, val distanceY: Int)
@@ -11,19 +12,19 @@ open class PileLayout(val parent: ViewGroup, color: Int,
 
     val cards = arrayListOf<NertzCardView>()
     val size: Int get() = cards.size
-    private val fullHeight: Int get() = baseHeight + additionalHeight(size)
+    val top: NertzCardView? get() = cards.firstOrNull()
+    private val fullHeight: Int get() = baseHeight + verticalOffset(size)
 
     init {
-        val view = View(parent.context)
+        val view = CardView(parent.context)
         if (color != 0) {
-            view.setBackgroundColor(color)
+            view.setCardBackgroundColor(color)
+            view.radius = width / NertzCardView.radiusDivisor
         }
         parent.addView(view)
         resizeView(view)
         positionView(view, x, y)
     }
-
-    val top: NertzCardView? get() = cards.firstOrNull()
 
     fun NertzCardView(card: NertzCard): NertzCardView {
         return NertzCardView(parent, card, this, size).also {
@@ -68,7 +69,7 @@ open class PileLayout(val parent: ViewGroup, color: Int,
 
     // Moves a card to its correct location in this pile
     private fun positionCard(ncv: NertzCardView) {
-        positionView(ncv, x, y + additionalHeight(ncv.posInPile))
+        positionView(ncv, x, y + verticalOffset(ncv.posInPile))
     }
 
     // Move all cards starting at startingAt by the given distanceX and distanceY
@@ -103,7 +104,7 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         }
         return StagedMove(this, firstCard.posInPile,
                 x - firstCard.x.toInt(),
-                y + additionalHeight(firstCard.posInPile) - firstCard.y.toInt())
+                y + verticalOffset(firstCard.posInPile) - firstCard.y.toInt())
     }
 
     // Move all cards starting at startingAt by the given distanceX and distanceY
@@ -132,7 +133,7 @@ open class PileLayout(val parent: ViewGroup, color: Int,
 
     // Returns the distance in pixels between this.y and the top of a card at the given position
     // in this pile.
-    open fun additionalHeight(posInPile: Int): Int {
+    open fun verticalOffset(posInPile: Int): Int {
         return 0
     }
 }

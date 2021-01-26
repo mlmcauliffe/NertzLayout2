@@ -72,7 +72,6 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
                     }
                     newPile.second
                 }
-                //destination.reposition(ncv)
                 val stage = destination.stageReposition(ncv)
                 animateStagedMove(stage)
             }
