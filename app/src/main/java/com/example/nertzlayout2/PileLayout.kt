@@ -3,6 +3,7 @@ package com.example.nertzlayout2
 import android.view.View
 import android.view.ViewGroup
 import androidx.cardview.widget.CardView
+import androidx.core.view.isInvisible
 
 class StagedMove(val pile: PileLayout, val startingAt: Int,
                  val distanceX: Int, val distanceY: Int)
@@ -121,6 +122,22 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         for (idx in startingAt until size) {
             cards[idx].bringToFront()
         }
+    }
+
+    fun accept(fromPile: ArrayList<NertzCardView>, count: Int) {
+        for (idx in 0 until count) {
+            fromPile.removeFirst().let {
+                parent.addView(it)
+                it.posInPile = size
+                cards.add(it)
+            }
+        }
+    }
+
+    fun release(toPile: ArrayList<NertzCardView>) {
+        for (card in cards) parent.removeView(card)
+        toPile.addAll(cards)
+        cards.clear()
     }
 
     // Returns true if the given point falls within the boundaries of this pile given the number

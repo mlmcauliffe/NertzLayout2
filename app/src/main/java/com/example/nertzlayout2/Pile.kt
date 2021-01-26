@@ -3,6 +3,7 @@ package com.example.nertzlayout2
 abstract class Pile {
     val cards = arrayListOf<NertzCard>()
 
+    val isEmpty get() = cards.isEmpty()
     val size get() = cards.size
     val top get() = cards.lastOrNull()
 
@@ -30,5 +31,19 @@ abstract class Pile {
 
     fun transfer(firstCard: NertzCard) {
         transfer(firstCard.pile, firstCard.posInPile)
+    }
+
+    fun accept(fromPile: ArrayList<NertzCard>, count: Int) {
+        for (idx in 0 until count) {
+            fromPile.removeFirst().let {
+                it.posInPile = size
+                cards.add(it)
+            }
+        }
+    }
+
+    fun release(toPile: ArrayList<NertzCard>) {
+        toPile.addAll(cards)
+        cards.clear()
     }
 }

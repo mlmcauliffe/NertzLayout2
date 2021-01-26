@@ -1,6 +1,6 @@
 package com.example.nertzlayout2
 
-class NertzPile: Pile() {
+open class SourcePile: Pile() {
     override fun accepts(card: NertzCard): Boolean {
         return false
     }

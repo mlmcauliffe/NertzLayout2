@@ -26,6 +26,9 @@ class GameBoardLayout(
     val cascadeOverlapSize: Int,
     val playerWidth: Int,
     val playerHeight: Int,
+
+    val turnLocation: Point,
+    val hitLocation: Point
 )
 
 fun GameBoardLayout(width: Int, height: Int, params: GameBoardLayoutParams)
@@ -78,6 +81,12 @@ fun GameBoardLayout(width: Int, height: Int, params: GameBoardLayoutParams)
         Point(playerSideMargin + ((it + 1) * cascadeWidthPlusPadding).toInt(), playerTop)
     }
 
+    // TODO: Need param for distance between nertz pile and draw pile
+    val turnLocation = Point(nertzLocation.x,
+            (nertzLocation.y + playerHeight + params.betweenAcesAndPiles).toInt())
+    val hitLocation = Point(turnLocation.x,
+            (turnLocation.y + playerHeight + params.betweenAcesAndPiles).toInt())
+
     return GameBoardLayout(
         aceLocations,
         aceWidth.toInt(),
@@ -87,6 +96,7 @@ fun GameBoardLayout(width: Int, height: Int, params: GameBoardLayoutParams)
         cascadeLocations,
         (playerHeight * params.cascadeOverlapFraction).toInt(),
         playerWidth.toInt(),
-        playerHeight.toInt()
-    )
+        playerHeight.toInt(),
+        turnLocation,
+        hitLocation)
 }

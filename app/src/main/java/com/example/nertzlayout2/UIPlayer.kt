@@ -5,10 +5,13 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.view.*
-import androidx.constraintlayout.widget.ConstraintLayout
 
 @SuppressLint("ClickableViewAccessibility")
 class UIPlayer(val game: Game, val layout: GameLayout) {
+
+    companion object {
+        val TurnAtATime = 3
+    }
 
     var acePiles: List<Pair<Pile, PileLayout>>
     var cascadePiles: List<Pair<Pile, PileLayout>>
@@ -17,7 +20,7 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
         for (suit in Suit.values()) {
             val card = game.nertzPile.NertzCard(suit)
             val ncv = layout.nertzPile.NertzCardView(card)
-            ncv.setOnTouchListener(listener(card, ncv))
+            ncv.setOnTouchListener(nertzCardListener(card, ncv))
         }
         layout.nertzPile.reposition()
 
@@ -25,22 +28,41 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
             for (suit in Suit.values()) {
                 val card = pair.first.NertzCard(suit)
                 val ncv = pair.second.NertzCardView(card)
-                ncv.setOnTouchListener(listener(card, ncv))
+                ncv.setOnTouchListener(nertzCardListener(card, ncv))
             }
             pair.second.reposition()
         }
 
         acePiles = game.acePiles.zip(layout.acePiles)
         cascadePiles = game.cascadePiles.zip(layout.cascadePiles)
+
+        for (count in 0 until 2) {
+            for (suit in Suit.values()) {
+                val card = game.turnPile.NertzCard(suit)
+                val ncv = layout.turnPile.NertzCardView(card)
+                ncv.setOnTouchListener(nertzCardListener(card, ncv))
+            }
+        }
+        game.turnPile.reset()
+        layout.turnPile.apply {
+            reset()
+            reposition()
+        }
+
+        layout.hitPileTop.apply {
+            setOnTouchListener(hitPileListener(layout.hitPileTop, game.turnPile, layout.turnPile))
+            bringToFront()
+            setEmpty(false)
+        }
     }
 
     val context: Context get() = layout.context
-    var stage: StagedMove? = null
+    var animationInFlight: StagedMove? = null
 
-    fun listener(card: NertzCard, ncv: NertzCardView): View.OnTouchListener {
+    fun nertzCardListener(card: NertzCard, ncv: NertzCardView): View.OnTouchListener {
         val listener = FullOnGestureListenerAdapter(object: FullOnGestureListener() {
             override fun onDown(e: MotionEvent): Boolean {
-                if (stage != null) {
+                if (animationInFlight != null) {
                     // Don't accept UI actions while animation is in progress
                     return false
                 }
@@ -75,24 +97,45 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
                 val stage = destination.stageReposition(ncv)
                 animateStagedMove(stage)
             }
+
+            fun animateStagedMove(stage: StagedMove) {
+                val animator = ValueAnimator.ofFloat(0f, 1f)
+                animator.setDuration(100)
+                animator.addUpdateListener(
+                        ValueAnimatorAdapter({ fraction ->
+                            stage.pile.animateMove(stage.startingAt, (stage.distanceX * fraction).toInt(),
+                                    (stage.distanceY * fraction).toInt())
+                        }, {
+                            stage.pile.reposition(stage.startingAt)
+                            animationInFlight = null
+                        })
+                )
+                animationInFlight = stage
+                animator.start()
+            }
         })
         return FullGestureDetector(context, listener)
     }
 
-    fun animateStagedMove(stage: StagedMove) {
-        val animator = ValueAnimator.ofFloat(0f, 1f)
-        animator.setDuration(100)
-        animator.addUpdateListener(
-            ValueAnimatorAdapter({ fraction ->
-                stage.pile.animateMove(stage.startingAt, (stage.distanceX * fraction).toInt(),
-                        (stage.distanceY * fraction).toInt())
-            }, {
-                stage.pile.reposition(stage.startingAt)
-                this.stage = null
-            })
-        )
-        this.stage = stage
-        animator.start()
+    fun hitPileListener(hitPileTop: HitPileLayout, turnPile: TurnPile, turnPileLayout: TurnPileLayout):
+        View.OnTouchListener {
+        return object: View.OnTouchListener {
+            override fun onTouch(p0: View, event: MotionEvent): Boolean {
+                if (event.action != MotionEvent.ACTION_DOWN) {
+                    return false
+                }
+                if (turnPile.allVisible()) {
+                    turnPile.reset()
+                    turnPileLayout.reset()
+                } else {
+                    turnPile.turn()
+                    turnPileLayout.turn()
+                    turnPileLayout.reposition()
+                }
+                hitPileTop.setEmpty(turnPile.allVisible())
+                return true
+            }
+        }
     }
 
     fun log(msg: String) {

@@ -9,7 +9,9 @@ class GameLayout(
         val layout: GameBoardLayout,
         val acePiles: Array<PileLayout>,
         val nertzPile: PileLayout,
-        val cascadePiles: Array<PileLayout>) {
+        val cascadePiles: Array<PileLayout>,
+        val turnPile: TurnPileLayout,
+        val hitPileTop: HitPileLayout) {
 
     companion object {
         const val PileColor = 0xFFBDBDBD.toInt()
@@ -29,8 +31,7 @@ fun GameLayout(parent: ViewGroup, layout: GameBoardLayout): GameLayout {
             val location = layout.aceLocations[it]
             PileLayout(parent, GameLayout.PileColor,
                     location.x, location.y, layout.aceWidth, layout.aceHeight)
-        },
-        {
+        }, {
             val location = layout.nertzLocation
             PileLayout(parent, GameLayout.PileColor,
                     location.x, location.y, layout.playerWidth, layout.playerHeight)
@@ -39,5 +40,13 @@ fun GameLayout(parent: ViewGroup, layout: GameBoardLayout): GameLayout {
             val location = layout.cascadeLocations[it]
             CascadePileLayout(parent, GameLayout.PileColor, location.x, location.y,
                 layout.playerWidth, layout.playerHeight, layout.cascadeOverlapSize)
-        })
+        }, {
+            val location = layout.turnLocation
+            TurnPileLayout(parent, GameLayout.PileColor,
+                    location.x, location.y, layout.playerWidth, layout.playerHeight)
+        }(), {
+             val location = layout.hitLocation
+            HitPileLayout(parent, location.x, location.y, layout.playerWidth, layout.playerHeight)
+        }()
+    )
 }
