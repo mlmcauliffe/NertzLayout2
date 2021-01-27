@@ -10,8 +10,8 @@ abstract class Pile {
     abstract fun accepts(card: NertzCard): Boolean
     abstract val isSource: Boolean
 
-    fun NertzCard(suit: Suit): NertzCard {
-        return NertzCard(suit, this, size).also {
+    fun NertzCard(cardValue: Int): NertzCard {
+        return NertzCard(cardValue, this, size).also {
             cards.add(it)
         }
     }

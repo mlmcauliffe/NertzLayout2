@@ -9,7 +9,7 @@ class Game(
 
 fun Game(cascadePileCount: Int): Game {
     return Game(
-        Array<AcePile>(Suit.values().size) { AcePile() },
+        Array<AcePile>(Suit.values().size) { AcePile(it) },
         SourcePile(),
         Array<CascadePile>(cascadePileCount) { CascadePile() },
         TurnPile())

@@ -35,7 +35,7 @@ fun GameBoardLayout(width: Int, height: Int, params: GameBoardLayoutParams)
     : GameBoardLayout {
 
     val numPlayerPiles = params.numPlayerPiles + 1 // nertz pile + cascade piles
-    val cascadeMaxCards = NertzCard.cardsPerSuit
+    val cascadeMaxCards = Deck.CardsPerSuit
 
     // playerWidth1 = the max player card width that will fit the window width
     val playerWidthSansMargins = width -

@@ -10,6 +10,7 @@ import android.view.*
 class UIPlayer(val game: Game, val layout: GameLayout) {
 
     companion object {
+        val NertzPileCards = 13
         val TurnAtATime = 3
     }
 
@@ -17,37 +18,33 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
     var cascadePiles: List<Pair<Pile, PileLayout>>
 
     init {
-        for (suit in Suit.values()) {
-            val card = game.nertzPile.NertzCard(suit)
+        val dealer = Dealer()
+
+        for (idx in 0 until NertzPileCards) {
+            val card = game.nertzPile.NertzCard(dealer.next())
             val ncv = layout.nertzPile.NertzCardView(card)
             ncv.setOnTouchListener(nertzCardListener(card, ncv))
         }
         layout.nertzPile.reposition()
 
         for (pair in game.cascadePiles.zip(layout.cascadePiles)) {
-            for (suit in Suit.values()) {
-                val card = pair.first.NertzCard(suit)
-                val ncv = pair.second.NertzCardView(card)
-                ncv.setOnTouchListener(nertzCardListener(card, ncv))
-            }
+            val card = pair.first.NertzCard(dealer.next())
+            val ncv = pair.second.NertzCardView(card)
+            ncv.setOnTouchListener(nertzCardListener(card, ncv))
             pair.second.reposition()
         }
 
         acePiles = game.acePiles.zip(layout.acePiles)
         cascadePiles = game.cascadePiles.zip(layout.cascadePiles)
 
-        for (count in 0 until 2) {
-            for (suit in Suit.values()) {
-                val card = game.turnPile.NertzCard(suit)
-                val ncv = layout.turnPile.NertzCardView(card)
-                ncv.setOnTouchListener(nertzCardListener(card, ncv))
-            }
+        while (dealer.more) {
+            val card = game.turnPile.NertzCard(dealer.next())
+            val ncv = layout.turnPile.NertzCardView(card)
+            ncv.setOnTouchListener(nertzCardListener(card, ncv))
         }
         game.turnPile.reset()
-        layout.turnPile.apply {
-            reset()
-            reposition()
-        }
+        layout.turnPile.reset()
+        layout.turnPile.reposition()
 
         layout.hitPileTop.apply {
             setOnTouchListener(hitPileListener(layout.hitPileTop, game.turnPile, layout.turnPile))
@@ -76,7 +73,9 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
             override fun onScrollEnd() {
                 val newPile = if (layout.abovePlayerTop(ncv) && card == card.pile.top) {
                     // Choose an ace pile if we have moved above the player piles
-                    acePiles[card.suit.ordinal]
+                    acePiles[card.suit].let {
+                        if (it.first.accepts(card)) it else null
+                    }
                 } else {
                     // Choose a cascade pile if we can
                     cascadePiles.firstOrNull {
