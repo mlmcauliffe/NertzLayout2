@@ -78,9 +78,10 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
                     }
                 } else {
                     // Choose a cascade pile if we can
-                    cascadePiles.firstOrNull {
-                        it.second.contains(ncv) && it.first.accepts(card)
-                    }
+                    chooseDestination(card, ncv)
+                    //cascadePiles.firstOrNull {
+                    //    it.second.contains(ncv) && it.first.accepts(card)
+                    //}
                 }
 
                 val destination = if (newPile == null || newPile.first == card.pile) {
@@ -95,6 +96,25 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
                 }
                 val stage = destination.stageReposition(ncv)
                 animateStagedMove(stage)
+            }
+
+            fun chooseDestination(card: NertzCard, ncv: NertzCardView): Pair<Pile, PileLayout>? {
+                if (ncv.x + ncv.width / 2 < layout.layout.playerWidth) {
+                    return null
+                }
+                var ret: Pair<Pile, PileLayout>? = null
+                var minDistance = 0
+                for (pair in cascadePiles) {
+                    if (!pair.first.accepts(card)) {
+                        continue
+                    }
+                    val distance = Math.abs(ncv.x.toInt() - pair.second.x)
+                    if (ret == null || distance < minDistance) {
+                        ret = pair
+                        minDistance = distance
+                    }
+                }
+                return ret
             }
 
             fun animateStagedMove(stage: StagedMove) {

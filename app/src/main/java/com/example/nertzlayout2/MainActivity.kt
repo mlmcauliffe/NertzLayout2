@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
             dpToPx(80),
             0.7f,
             game.cascadePiles.size,
-            0.2f,
+            0.25f,
             1.0f,
             2f,
             dpToPx(20))

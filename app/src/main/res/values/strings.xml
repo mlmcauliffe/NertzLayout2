@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">NertzLayout2</string>
+    <string name="card_value">%1$s</string>
+    <string name="card_suit">%1$s</string>
 </resources>
