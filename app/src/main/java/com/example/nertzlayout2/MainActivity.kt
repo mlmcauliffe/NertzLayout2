@@ -17,6 +17,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val binding = ActivityMainBinding.inflate(layoutInflater)
         val tableTop = binding.tableTop
+        val undo = binding.undo
         val dm: DisplayMetrics = resources.displayMetrics
 
         val game = Game(4)
@@ -28,7 +29,7 @@ class MainActivity : AppCompatActivity() {
             layoutParams
         )
         val gameBoard = GameLayout(tableTop, layout)
-        val player = UIPlayer(game, gameBoard)
+        val player = UIPlayer(game, gameBoard, undo)
         setContentView(binding.root)
     }
 

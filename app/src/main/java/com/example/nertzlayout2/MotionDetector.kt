@@ -6,7 +6,7 @@ import android.view.MotionEvent
 import android.view.View
 
 abstract class FullOnGestureListener: GestureDetector.SimpleOnGestureListener() {
-    open fun onScrollEnd() {}
+    abstract fun onScrollEnd()
 }
 
 class FullOnGestureListenerAdapter(val child: FullOnGestureListener): FullOnGestureListener() {
@@ -26,6 +26,11 @@ class FullOnGestureListenerAdapter(val child: FullOnGestureListener): FullOnGest
         }
     }
 
+    override fun onFling(e1: MotionEvent?, e2: MotionEvent?,
+        velocityX: Float, velocityY: Float): Boolean {
+        return child.onFling(e1, e2, velocityX, velocityY)
+    }
+
     override fun onScrollEnd() {
         child.onScrollEnd()
     }
@@ -39,10 +44,11 @@ class FullGestureDetector(context: Context, val listener: FullOnGestureListener)
     }
 
     override fun onTouch(view: View, event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_UP) {
-            view.performClick()
-            listener.onScrollEnd()
+        return onTouchEvent(event).also {
+            if (event.action == MotionEvent.ACTION_UP) {
+                view.performClick()
+                listener.onScrollEnd()
+            }
         }
-        return onTouchEvent(event)
     }
 }

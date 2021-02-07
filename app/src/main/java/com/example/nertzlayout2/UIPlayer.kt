@@ -5,17 +5,21 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.view.*
+import android.widget.Button
 
 @SuppressLint("ClickableViewAccessibility")
-class UIPlayer(val game: Game, val layout: GameLayout) {
+class UIPlayer(val game: Game, val layout: GameLayout, val undoButton: Button) {
 
     companion object {
         val NertzPileCards = 13
         val TurnAtATime = 3
     }
 
-    var acePiles: List<Pair<Pile, PileLayout>>
-    var cascadePiles: List<Pair<Pile, PileLayout>>
+    var acePiles: List<PilePair>
+    var cascadePiles: List<PilePair>
+    val context: Context get() = layout.context
+    var animationInFlight: MoveAnimator? = null
+    var undo: Undo? = null
 
     init {
         val dealer = Dealer()
@@ -51,27 +55,36 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
             bringToFront()
             setEmpty(false)
         }
-    }
 
-    val context: Context get() = layout.context
-    var animationInFlight: StagedMove? = null
+        initUndo(undoButton)
+    }
 
     fun nertzCardListener(card: NertzCard, ncv: NertzCardView): View.OnTouchListener {
         val listener = FullOnGestureListenerAdapter(object: FullOnGestureListener() {
+            var upFling = false
             override fun onDown(e: MotionEvent): Boolean {
                 if (animationInFlight != null) {
-                    // Don't accept UI actions while animation is in progress
+                    animationInFlight!!.stop()
+                    animationInFlight = null
+                }
+                if (!card.pile.isSource) {
                     return false
                 }
                 ncv.pile.raise(ncv.posInPile)
+                upFling = false
                 return true
             }
             override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
                 ncv.pile.move(ncv.posInPile, distanceX.toInt(), distanceY.toInt())
                 return true
             }
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent?,
+                                 velocityX: Float, velocityY: Float): Boolean {
+                upFling = (velocityX >= 0 && velocityY < 0 && -velocityY > velocityX)
+                return true
+            }
             override fun onScrollEnd() {
-                val newPile = if (layout.abovePlayerTop(ncv) && card == card.pile.top) {
+                val newPile = if ((layout.abovePlayerTop(ncv) || upFling) && card == card.pile.top) {
                     // Choose an ace pile if we have moved above the player piles
                     acePiles[card.suit].let {
                         if (it.first.accepts(card)) it else null
@@ -79,30 +92,28 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
                 } else {
                     // Choose a cascade pile if we can
                     chooseDestination(card, ncv)
-                    //cascadePiles.firstOrNull {
-                    //    it.second.contains(ncv) && it.first.accepts(card)
-                    //}
                 }
 
                 val destination = if (newPile == null || newPile.first == card.pile) {
                     ncv.pile
                 } else {
+                    undo = CardMoveUndo(card, ncv, PilePair(card.pile, ncv.pile))
                     newPile.first.transfer(card)
                     newPile.second.transfer(ncv)
-                    if (!newPile.first.isSource) {
-                        ncv.setOnTouchListener(null)
-                    }
                     newPile.second
                 }
+                undoButton.isEnabled = (undo != null)
                 val stage = destination.stageReposition(ncv)
-                animateStagedMove(stage)
+                val animator = MoveAnimator(stage)
+                animator.start()
+                animationInFlight = animator
             }
 
-            fun chooseDestination(card: NertzCard, ncv: NertzCardView): Pair<Pile, PileLayout>? {
+            fun chooseDestination(card: NertzCard, ncv: NertzCardView): PilePair? {
                 if (ncv.x + ncv.width / 2 < layout.layout.playerWidth) {
                     return null
                 }
-                var ret: Pair<Pile, PileLayout>? = null
+                var ret: PilePair? = null
                 var minDistance = 0
                 for (pair in cascadePiles) {
                     if (!pair.first.accepts(card)) {
@@ -116,24 +127,19 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
                 }
                 return ret
             }
-
-            fun animateStagedMove(stage: StagedMove) {
-                val animator = ValueAnimator.ofFloat(0f, 1f)
-                animator.setDuration(100)
-                animator.addUpdateListener(
-                        ValueAnimatorAdapter({ fraction ->
-                            stage.pile.animateMove(stage.startingAt, (stage.distanceX * fraction).toInt(),
-                                    (stage.distanceY * fraction).toInt())
-                        }, {
-                            stage.pile.reposition(stage.startingAt)
-                            animationInFlight = null
-                        })
-                )
-                animationInFlight = stage
-                animator.start()
-            }
         })
         return FullGestureDetector(context, listener)
+    }
+
+    class CardMoveUndo(val card: NertzCard, var ncv: NertzCardView, val orig: PilePair): Undo {
+        constructor(card: NertzCard, ncv: NertzCardView): this(card, ncv, PilePair(card.pile, ncv.pile))
+
+        override fun apply(): MoveAnimator? {
+            orig.first.transfer(card)
+            orig.second.transfer(ncv)
+            val stage = orig.second.stageReposition(ncv)
+            return MoveAnimator(stage)
+        }
     }
 
     fun hitPileListener(hitPileTop: HitPileLayout, turnPile: TurnPile, turnPileLayout: TurnPileLayout):
@@ -143,6 +149,13 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
                 if (event.action != MotionEvent.ACTION_DOWN) {
                     return false
                 }
+                if (animationInFlight != null) {
+                    animationInFlight!!.stop()
+                    animationInFlight = null
+                }
+                undo = null
+                undoButton.isEnabled = false
+
                 if (turnPile.allVisible()) {
                     turnPile.reset()
                     turnPileLayout.reset()
@@ -155,6 +168,28 @@ class UIPlayer(val game: Game, val layout: GameLayout) {
                 return true
             }
         }
+    }
+
+    fun initUndo(undoButton: Button) {
+        undoButton.setOnClickListener(object: View.OnClickListener {
+            override fun onClick(button: View?) {
+                if (animationInFlight != null) {
+                    animationInFlight!!.stop()
+                    animationInFlight = null
+                }
+                with (undo ?: return) {
+                    undo = null
+                    undoButton.isEnabled = false
+                    val animator = apply()
+                    if (animator != null) {
+                        animator.start()
+                        animationInFlight = animator
+                    }
+                }
+            }
+        })
+
+        undoButton.isEnabled = false
     }
 
     fun log(msg: String) {

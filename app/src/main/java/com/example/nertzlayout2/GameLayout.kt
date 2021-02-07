@@ -45,7 +45,7 @@ fun GameLayout(parent: ViewGroup, layout: GameBoardLayout): GameLayout {
             TurnPileLayout(parent, GameLayout.PileColor,
                     location.x, location.y, layout.playerWidth, layout.playerHeight)
         }(), {
-             val location = layout.hitLocation
+            val location = layout.hitLocation
             HitPileLayout(parent, location.x, location.y, layout.playerWidth, layout.playerHeight)
         }()
     )

@@ -9,15 +9,40 @@
     tools:context=".MainActivity">
 
     <Space
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="20dp"
         android:layout_weight="0" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/tableTop"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="1">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        tools:layout_weight="1">
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="20dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/undo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/undo_button" />
+
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="20dp"
+        android:layout_weight="0" />
 </LinearLayout>

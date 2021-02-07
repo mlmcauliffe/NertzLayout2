@@ -13,8 +13,10 @@ open class PileLayout(val parent: ViewGroup, color: Int,
 
     val cards = arrayListOf<NertzCardView>()
     val size: Int get() = cards.size
+    open val cardOffset  = 0
+    val fullHeight: Int get() = baseHeight + verticalOffset(size)
+
     val top: NertzCardView? get() = cards.firstOrNull()
-    private val fullHeight: Int get() = baseHeight + verticalOffset(size)
 
     init {
         val view = CardView(parent.context)
@@ -73,6 +75,11 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         positionView(ncv, x, y + verticalOffset(ncv.posInPile))
     }
 
+    // Moves a card to its correct location relative to its predecessor
+    private fun positionCard(ncv: NertzCardView, pred: NertzCardView) {
+        positionView(ncv, pred.x.toInt(), pred.y.toInt() + cardOffset)
+    }
+
     // Move all cards starting at startingAt by the given distanceX and distanceY
     fun move(startingAt: Int, distanceX: Int, distanceY: Int) {
         for (idx in startingAt until size) {
@@ -84,9 +91,13 @@ open class PileLayout(val parent: ViewGroup, color: Int,
 
     // Move all cards starting at startingAt to their correct positions for this pile.
     fun reposition(startingAt: Int = 0) {
-        for (idx in startingAt until size) {
+        if (cards.isEmpty()) return
+        var prev = cards[startingAt]
+        positionCard(prev)
+        for (idx in startingAt + 1 until size) {
             val ncv = cards[idx]
-            positionCard(ncv)
+            positionCard(ncv, prev)
+            prev = ncv
         }
     }
 
@@ -151,6 +162,6 @@ open class PileLayout(val parent: ViewGroup, color: Int,
     // Returns the distance in pixels between this.y and the top of a card at the given position
     // in this pile.
     open fun verticalOffset(posInPile: Int): Int {
-        return 0
+        return posInPile * cardOffset
     }
 }
