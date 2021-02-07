@@ -11,9 +11,10 @@ class TurnPileMgr: PileMgr(true) {
         return invisibleCards.isEmpty()
     }
 
-    fun turn() {
+    fun turn(): Int {
         val toTurn = Math.min(invisibleCards.size, TurnAtATime)
         accept(invisibleCards, toTurn)
+        return toTurn
     }
 
     fun reset() {

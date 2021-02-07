@@ -28,6 +28,10 @@ class MoveAnimator(val stage: StagedMove) {
     }
 
     fun stop() {
+        animator.cancel()
+    }
+
+    fun finish() {
         animator.end()
     }
 }

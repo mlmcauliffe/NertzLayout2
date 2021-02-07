@@ -13,4 +13,11 @@ class CascadePileMgr: PileMgr(true) {
         return (suitCompat[myTop.suit] ?: error("")).contains(card.suit) &&
                 card.value == myTop.value - 1
     }
+
+    override fun isMovable(card: CardMgr): Boolean {
+        if (BuildConfig.DEBUG && card.pile != this) {
+            error("card is not on this pile")
+        }
+        return true
+    }
 }

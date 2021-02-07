@@ -7,8 +7,7 @@ fun TurnPile.allVisible(): Boolean {
 }
 
 fun TurnPile.turn() {
-    first.turn()
-    second.turn()
+    second.turn(first.turn())
 }
 
 fun TurnPile.reset() {

@@ -21,10 +21,10 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
         val listener = FullOnGestureListenerAdapter(object: FullOnGestureListener() {
             var upFling = false
             override fun onDown(e: MotionEvent): Boolean {
-                gc.beginUIOperation()
-                if (!card.pile.isSource) {
+                if (!card.pile.isMovable(card)) {
                     return false
                 }
+                gc.beginUIOperation(ncl)
                 ncl.pile.raise(ncl.posInPile)
                 upFling = false
                 return true
@@ -58,18 +58,19 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
             }
 
             fun chooseDestination(card: CardMgr, ncl: CardLayout): Pile? {
-                if (ncl.x + ncl.width / 2 < gc.layout.layout.playerWidth) {
+                if (Math.abs(ncl.x - ncl.pile.x.toFloat()) < ncl.width / 2) {
+                    // If we have moved less than half the width of a card, stay put
                     return null
                 }
                 var ret: Pile? = null
                 var minDistance = 0
-                for (pair in gc.cascadePiles) {
-                    if (!pair.first.accepts(card)) {
+                for (pile in gc.cascadePiles) {
+                    if (!pile.accepts(card)) {
                         continue
                     }
-                    val distance = Math.abs(ncl.x.toInt() - pair.second.x)
+                    val distance = Math.abs(ncl.x.toInt() - pile.second.x)
                     if (ret == null || distance < minDistance) {
-                        ret = pair
+                        ret = pile
                         minDistance = distance
                     }
                 }

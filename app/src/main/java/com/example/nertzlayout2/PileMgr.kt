@@ -7,6 +7,13 @@ open class PileMgr(val isSource: Boolean) {
     val size get() = cards.size
     val top get() = cards.lastOrNull()
 
+    open fun isMovable(card: CardMgr): Boolean {
+        if (BuildConfig.DEBUG && card.pile != this) {
+            error("card is not on this pile")
+        }
+        return isSource && card == top
+    }
+
     open fun accepts(card: CardMgr): Boolean {
         return !isSource
     }

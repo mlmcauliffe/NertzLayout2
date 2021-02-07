@@ -7,16 +7,7 @@ class TurnPileLayout(parent: ViewGroup, color: Int, x: Int, y: Int, width: Int, 
 
     val invisibleCards = ArrayList<CardLayout>()
 
-    companion object {
-        val TurnAtATime = 3
-    }
-
-    fun allVisible(): Boolean {
-        return invisibleCards.isEmpty()
-    }
-
-    fun turn() {
-        val toTurn = Math.min(invisibleCards.size, TurnAtATime)
+    fun turn(toTurn: Int) {
         accept(invisibleCards, toTurn)
     }
 

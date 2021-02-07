@@ -19,6 +19,8 @@ class GameController(val game: Game, val layout: GameLayout) {
     val hitPileTop = layout.hitPileTop
 
     val context: Context get() = layout.context
+
+    var cardInFlight: CardLayout? = null
     var animationInFlight: MoveAnimator? = null
     var toUndo: Undo? = null
 
@@ -64,9 +66,16 @@ class GameController(val game: Game, val layout: GameLayout) {
         return layout.abovePlayerTop(view)
     }
 
-    fun beginUIOperation() {
-        if (animationInFlight != null) animationInFlight!!.stop()
-        animationInFlight = null
+    fun beginUIOperation(ncl: CardLayout?) {
+        if (animationInFlight != null) {
+            if (ncl == cardInFlight) {
+                animationInFlight!!.stop()
+            } else {
+                animationInFlight!!.finish()
+            }
+            animationInFlight = null
+        }
+        cardInFlight = ncl
     }
 
     fun setUndo(undo: Undo?) {
@@ -74,7 +83,7 @@ class GameController(val game: Game, val layout: GameLayout) {
     }
 
     fun hit(): Boolean {
-        beginUIOperation()
+        beginUIOperation(null)
 
         if (turnPile.allVisible()) {
             turnPile.reset()
@@ -113,10 +122,11 @@ class GameController(val game: Game, val layout: GameLayout) {
         return false
     }
 
-    class CardMoveUndo(val card: CardMgr, var ncl: CardLayout, val orig: Pile): Undo {
+    inner class CardMoveUndo(val card: CardMgr, var ncl: CardLayout, val orig: Pile): Undo {
         constructor(card: CardMgr, ncl: CardLayout): this(card, ncl, Pile(card.pile, ncl.pile))
 
-        override fun apply(): MoveAnimator? {
+        override fun apply(): MoveAnimator {
+            beginUIOperation(ncl)
             orig.first.transfer(card)
             orig.second.transfer(ncl)
             val stage = orig.second.stageReposition(ncl)
