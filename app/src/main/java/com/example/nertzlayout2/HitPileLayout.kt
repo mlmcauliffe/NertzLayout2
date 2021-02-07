@@ -14,7 +14,7 @@ class HitPileLayout(parent: ViewGroup, x: Int, y: Int, width: Int, height: Int):
     init {
         this.x = x.toFloat()
         this.y = y.toFloat()
-        radius = NertzCardView.radiusDivisor
+        radius = CardLayout.radiusDivisor
         parent.addView(this)
         val lp = layoutParams
         lp.width = width

@@ -1,22 +1,17 @@
 package com.example.nertzlayout2
 
-class TurnPile: SourcePile() {
-    val invisibleCards = ArrayList<NertzCard>()
+typealias TurnPile = Pair<TurnPileMgr, TurnPileLayout>
 
-    companion object {
-        val TurnAtATime = 3
-    }
+fun TurnPile.allVisible(): Boolean {
+    return first.allVisible()
+}
 
-    fun allVisible(): Boolean {
-        return invisibleCards.isEmpty()
-    }
+fun TurnPile.turn() {
+    first.turn()
+    second.turn()
+}
 
-    fun turn() {
-        val toTurn = Math.min(invisibleCards.size, TurnAtATime)
-        accept(invisibleCards, toTurn)
-    }
-
-    fun reset() {
-        release(invisibleCards)
-    }
+fun TurnPile.reset() {
+    first.reset()
+    second.reset()
 }

@@ -4,10 +4,14 @@ import android.animation.ValueAnimator
 
 class MoveAnimator(val stage: StagedMove) {
 
+    companion object {
+        val duration = 50L
+    }
+
     val animator = ValueAnimator.ofFloat(0f, 1f)
 
     init {
-        animator.setDuration(50)
+        animator.setDuration(duration)
         animator.addUpdateListener(
                 ValueAnimatorAdapter({ fraction ->
                     stage.pile.animateMove(stage.startingAt,

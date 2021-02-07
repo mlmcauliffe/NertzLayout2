@@ -29,7 +29,8 @@ class MainActivity : AppCompatActivity() {
             layoutParams
         )
         val gameBoard = GameLayout(tableTop, layout)
-        val player = UIPlayer(game, gameBoard, undo)
+        val gc = GameController(game, gameBoard)
+        val player = UIPlayer(gc, undo)
         setContentView(binding.root)
     }
 

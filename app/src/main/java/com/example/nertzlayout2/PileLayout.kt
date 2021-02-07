@@ -3,7 +3,6 @@ package com.example.nertzlayout2
 import android.view.View
 import android.view.ViewGroup
 import androidx.cardview.widget.CardView
-import androidx.core.view.isInvisible
 
 class StagedMove(val pile: PileLayout, val startingAt: Int,
                  val distanceX: Int, val distanceY: Int)
@@ -11,26 +10,26 @@ class StagedMove(val pile: PileLayout, val startingAt: Int,
 open class PileLayout(val parent: ViewGroup, color: Int,
                       val x: Int, val y: Int, val width: Int, val baseHeight: Int) {
 
-    val cards = arrayListOf<NertzCardView>()
+    val cards = arrayListOf<CardLayout>()
     val size: Int get() = cards.size
     open val cardOffset  = 0
     val fullHeight: Int get() = baseHeight + verticalOffset(size)
 
-    val top: NertzCardView? get() = cards.firstOrNull()
+    val top: CardLayout? get() = cards.firstOrNull()
 
     init {
         val view = CardView(parent.context)
         if (color != 0) {
             view.setCardBackgroundColor(color)
-            view.radius = width / NertzCardView.radiusDivisor
+            view.radius = width / CardLayout.radiusDivisor
         }
         parent.addView(view)
         resizeView(view)
         positionView(view, x, y)
     }
 
-    fun NertzCardView(card: NertzCard): NertzCardView {
-        return NertzCardView(parent, card, this, size).also {
+    fun CardLayout(card: CardMgr): CardLayout {
+        return CardLayout(parent, card, this, size).also {
             resizeView(it)
             cards.add(it)
         }
@@ -52,7 +51,7 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         }
     }
 
-    fun transfer(firstCard: NertzCardView) {
+    fun transfer(firstCard: CardLayout) {
         transfer(firstCard.pile, firstCard.posInPile)
     }
 
@@ -71,13 +70,13 @@ open class PileLayout(val parent: ViewGroup, color: Int,
     }
 
     // Moves a card to its correct location in this pile
-    private fun positionCard(ncv: NertzCardView) {
-        positionView(ncv, x, y + verticalOffset(ncv.posInPile))
+    private fun positionCard(ncl: CardLayout) {
+        positionView(ncl, x, y + verticalOffset(ncl.posInPile))
     }
 
     // Moves a card to its correct location relative to its predecessor
-    private fun positionCard(ncv: NertzCardView, pred: NertzCardView) {
-        positionView(ncv, pred.x.toInt(), pred.y.toInt() + cardOffset)
+    private fun positionCard(ncl: CardLayout, pred: CardLayout) {
+        positionView(ncl, pred.x.toInt(), pred.y.toInt() + cardOffset)
     }
 
     // Move all cards starting at startingAt by the given distanceX and distanceY
@@ -95,19 +94,19 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         var prev = cards[startingAt]
         positionCard(prev)
         for (idx in startingAt + 1 until size) {
-            val ncv = cards[idx]
-            positionCard(ncv, prev)
-            prev = ncv
+            val ncl = cards[idx]
+            positionCard(ncl, prev)
+            prev = ncl
         }
     }
 
-    fun reposition(ncv: NertzCardView) {
-        reposition(ncv.posInPile)
+    fun reposition(ncl: CardLayout) {
+        reposition(ncl.posInPile)
     }
 
     // Calculates the x- and y-distance from the given card's current location to its correction
     // location for this pile.
-    fun stageReposition(firstCard: NertzCardView): StagedMove {
+    fun stageReposition(firstCard: CardLayout): StagedMove {
         for (idx in firstCard.posInPile until size) {
             cards[idx].apply {
                 animationStartX = x.toInt()
@@ -135,7 +134,7 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         }
     }
 
-    fun accept(fromPile: ArrayList<NertzCardView>, count: Int) {
+    fun accept(fromPile: ArrayList<CardLayout>, count: Int) {
         for (idx in 0 until count) {
             fromPile.removeFirst().let {
                 parent.addView(it)
@@ -145,7 +144,7 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         }
     }
 
-    fun release(toPile: ArrayList<NertzCardView>) {
+    fun release(toPile: ArrayList<CardLayout>) {
         for (card in cards) parent.removeView(card)
         toPile.addAll(cards)
         cards.clear()
