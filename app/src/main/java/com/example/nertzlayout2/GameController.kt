@@ -2,7 +2,6 @@ package com.example.nertzlayout2
 
 import android.content.Context
 import android.view.View
-import android.widget.Button
 
 typealias Card = Pair<CardMgr, CardLayout>
 
@@ -21,7 +20,7 @@ class GameController(val game: Game, val layout: GameLayout) {
     val context: Context get() = layout.context
 
     var cardInFlight: CardLayout? = null
-    var animationInFlight: MoveAnimator? = null
+    var animationInFlight: CardAnimator? = null
     var toUndo: Undo? = null
 
     init {
@@ -97,8 +96,8 @@ class GameController(val game: Game, val layout: GameLayout) {
     }
 
     fun reposition(ncl: CardLayout) {
-        val stage = ncl.pile.stageReposition(ncl)
-        val animator = MoveAnimator(stage)
+        val stage = ncl.pile.animateTransfer(ncl)
+        val animator = CardAnimator(stage)
         animator.start()
         animationInFlight = animator
     }
@@ -125,12 +124,12 @@ class GameController(val game: Game, val layout: GameLayout) {
     inner class CardMoveUndo(val card: CardMgr, var ncl: CardLayout, val orig: Pile): Undo {
         constructor(card: CardMgr, ncl: CardLayout): this(card, ncl, Pile(card.pile, ncl.pile))
 
-        override fun apply(): MoveAnimator {
+        override fun apply(): CardAnimator {
             beginUIOperation(ncl)
             orig.first.transfer(card)
             orig.second.transfer(ncl)
-            val stage = orig.second.stageReposition(ncl)
-            return MoveAnimator(stage)
+            val anim = orig.second.animateTransfer(ncl)
+            return CardAnimator(anim)
         }
     }
 }

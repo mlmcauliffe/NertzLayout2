@@ -39,7 +39,4 @@ class CardLayout(parent: ViewGroup, card: CardMgr, var pile: PileLayout, var pos
         super.onSizeChanged(w, h, oldw, oldh)
         radius = w / CardLayout.radiusDivisor
     }
-
-    var animationStartX = 0
-    var animationStartY = 0
 }

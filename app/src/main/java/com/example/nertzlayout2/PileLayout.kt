@@ -4,8 +4,12 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.cardview.widget.CardView
 
-class StagedMove(val pile: PileLayout, val startingAt: Int,
-                 val distanceX: Int, val distanceY: Int)
+fun View.resize(wi: Int, hi: Int) {
+    layoutParams = layoutParams.apply {
+        width = wi
+        height = hi
+    }
+}
 
 open class PileLayout(val parent: ViewGroup, color: Int,
                       val x: Int, val y: Int, val width: Int, val baseHeight: Int) {
@@ -24,13 +28,13 @@ open class PileLayout(val parent: ViewGroup, color: Int,
             view.radius = width / CardLayout.radiusDivisor
         }
         parent.addView(view)
-        resizeView(view)
+        view.resize(width, baseHeight)
         positionView(view, x, y)
     }
 
     fun CardLayout(card: CardMgr): CardLayout {
         return CardLayout(parent, card, this, size).also {
-            resizeView(it)
+            it.resize(width, baseHeight)
             cards.add(it)
         }
     }
@@ -43,7 +47,6 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         }
         while (fromPile.size > startingAt) {
             fromPile.cards.removeAt(startingAt).let {
-                resizeView(it)
                 it.pile = this
                 it.posInPile = size
                 cards.add(it)
@@ -53,14 +56,6 @@ open class PileLayout(val parent: ViewGroup, color: Int,
 
     fun transfer(firstCard: CardLayout) {
         transfer(firstCard.pile, firstCard.posInPile)
-    }
-
-    // Resizes a view to this pile's size
-    private fun resizeView(view: View) {
-        val lp = view.layoutParams
-        lp.width = width
-        lp.height = baseHeight
-        view.layoutParams = lp
     }
 
     // Moves the given view to (x, y)
@@ -79,25 +74,31 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         positionView(ncl, pred.x.toInt(), pred.y.toInt() + cardOffset)
     }
 
+    // Given an already-positioned card, correctly position its successors
+    private fun positionCards(ncl: CardLayout) {
+        var prev = ncl
+        for (idx in ncl.posInPile + 1 until size) {
+            val curr = cards[idx]
+            positionCard(curr, prev)
+            prev = curr
+        }
+    }
+
     // Move all cards starting at startingAt by the given distanceX and distanceY
     fun move(startingAt: Int, distanceX: Int, distanceY: Int) {
-        for (idx in startingAt until size) {
-            val ncl = cards[idx]
-            ncl.x += distanceX
-            ncl.y += distanceY
-        }
+        if (cards.size <= startingAt) return
+        val ncl = cards[startingAt]
+        ncl.x += distanceX
+        ncl.y = Math.max(ncl.y + distanceY, 0f)
+        positionCards(ncl)
     }
 
     // Move all cards starting at startingAt to their correct positions for this pile.
     fun reposition(startingAt: Int = 0) {
-        if (cards.isEmpty()) return
-        var prev = cards[startingAt]
-        positionCard(prev)
-        for (idx in startingAt + 1 until size) {
-            val ncl = cards[idx]
-            positionCard(ncl, prev)
-            prev = ncl
-        }
+        if (cards.size <= startingAt) return
+        val ncl = cards[startingAt]
+        positionCard(ncl)
+        positionCards(ncl)
     }
 
     fun reposition(ncl: CardLayout) {
@@ -106,25 +107,55 @@ open class PileLayout(val parent: ViewGroup, color: Int,
 
     // Calculates the x- and y-distance from the given card's current location to its correction
     // location for this pile.
-    fun stageReposition(firstCard: CardLayout): StagedMove {
-        for (idx in firstCard.posInPile until size) {
-            cards[idx].apply {
-                animationStartX = x.toInt()
-                animationStartY = y.toInt()
-            }
+    fun animateTransfer(firstCard: CardLayout): MoveAnimation {
+        return if (firstCard.width == width && firstCard.height == baseHeight) {
+            MoveAnimation(firstCard.posInPile,
+                    firstCard.x.toInt(),
+                    firstCard.y.toInt(),
+                    x - firstCard.x.toInt(),
+                    y + verticalOffset(firstCard.posInPile) - firstCard.y.toInt())
+        } else {
+            MoveResizeAnimation(firstCard.posInPile,
+                    firstCard.x.toInt(), firstCard.y.toInt(),
+                    x - firstCard.x.toInt(),
+                    y + verticalOffset(firstCard.posInPile) - firstCard.y.toInt(),
+                    firstCard.width, firstCard.height,
+                    width - firstCard.width, baseHeight - firstCard.height)
         }
-        return StagedMove(this, firstCard.posInPile,
-                x - firstCard.x.toInt(),
-                y + verticalOffset(firstCard.posInPile) - firstCard.y.toInt())
     }
 
-    // Move all cards starting at startingAt by the given distanceX and distanceY
-    fun animateMove(startingAt: Int, distanceX: Int, distanceY: Int) {
-        for (idx in startingAt until size) {
-            val ncl = cards[idx]
-            ncl.x = (ncl.animationStartX + distanceX).toFloat()
-            ncl.y = (ncl.animationStartY + distanceY).toFloat()
+    open inner class MoveAnimation(val startingAt: Int,
+                             val startX: Int, val startY: Int,
+                             val distanceX: Int, val distanceY: Int): AnimationOp {
+        override fun progress(fraction: Float) {
+            progressMove(this, fraction)
         }
+    }
+
+    inner class MoveResizeAnimation(cardIdx: Int,
+                              startX: Int, startY: Int,
+                              distanceX: Int, distanceY: Int,
+                              val startWidth: Int, val startHeight: Int,
+                              val changeW: Int, var changeH: Int):
+            MoveAnimation(cardIdx, startX, startY, distanceX, distanceY)
+    {
+        override fun progress(fraction: Float) {
+            super.progress(fraction)
+            progressResize(this, fraction)
+        }
+    }
+
+    fun progressMove(anim: MoveAnimation, fraction: Float) {
+        val ncl = cards[anim.startingAt]
+        ncl.x = anim.startX + (fraction * anim.distanceX)
+        ncl.y = anim.startY + (fraction * anim.distanceY)
+        positionCards(ncl)
+    }
+
+    fun progressResize(anim: MoveResizeAnimation, fraction: Float) {
+        val ncl = cards[anim.startingAt]
+        ncl.resize(anim.startWidth + (anim.changeW * fraction).toInt(),
+                anim.startHeight + (anim.changeH * fraction).toInt())
     }
 
     // Raises the cards starting at startingAt in the view hierarchy
