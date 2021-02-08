@@ -3,17 +3,18 @@ package com.example.nertzlayout2
 import android.animation.ValueAnimator
 
 interface AnimationOp {
+    val totalDistance: Float
     fun progress(fraction: Float)
 }
 
 class CardAnimator(val op: AnimationOp) {
 
     companion object {
-        val duration = 50L
+        val msPerCardWidth = 20
     }
 
     val animator = ValueAnimator.ofFloat(0f, 1f).also {
-        it.setDuration(duration)
+        it.setDuration((msPerCardWidth * op.totalDistance).toLong())
         it.addUpdateListener(object: ValueAnimator.AnimatorUpdateListener {
             override fun onAnimationUpdate(va: ValueAnimator) {
                 op.progress(va.animatedFraction)

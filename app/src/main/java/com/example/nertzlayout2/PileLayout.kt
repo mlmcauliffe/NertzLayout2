@@ -105,39 +105,37 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         reposition(ncl.posInPile)
     }
 
-    // Calculates the x- and y-distance from the given card's current location to its correction
+    // Calculates the x- and y-distance from the given card's current location to its correct
     // location for this pile.
-    fun animateTransfer(firstCard: CardLayout): MoveAnimation {
-        return if (firstCard.width == width && firstCard.height == height) {
-            MoveAnimation(firstCard.posInPile,
-                    firstCard.x.toInt(),
-                    firstCard.y.toInt(),
-                    x - firstCard.x.toInt(),
-                    y + verticalOffset(firstCard.posInPile) - firstCard.y.toInt())
+    fun animateTransfer(topCard: CardLayout): MoveAnimation {
+        val currX = topCard.x.toInt()
+        val currY = topCard.y.toInt()
+        val distanceX = x - currX
+        val distanceY = y + verticalOffset(topCard.posInPile) - currY
+        val totalDistance = Math.abs((distanceX + distanceY).toFloat() / width.toFloat())
+        return if (topCard.width == width && topCard.height == height) {
+            MoveAnimation(topCard.posInPile, currX, currY, distanceX, distanceY, totalDistance)
         } else {
-            MoveResizeAnimation(firstCard.posInPile,
-                    firstCard.x.toInt(), firstCard.y.toInt(),
-                    x - firstCard.x.toInt(),
-                    y + verticalOffset(firstCard.posInPile) - firstCard.y.toInt(),
-                    firstCard.width, firstCard.height,
-                    width - firstCard.width, height - firstCard.height)
+            val diffW = width - topCard.width
+            val diffH = height - topCard.height
+            MoveResizeAnimation(topCard.posInPile, currX, currY, distanceX, distanceY, totalDistance,
+                    topCard.width, topCard.height, diffW, diffH)
         }
     }
 
-    open inner class MoveAnimation(val startingAt: Int,
-                             val startX: Int, val startY: Int,
-                             val distanceX: Int, val distanceY: Int): AnimationOp {
+    open inner class MoveAnimation(val startingAt: Int, val startX: Int, val startY: Int,
+                                   val distanceX: Int, val distanceY: Int,
+                                   override val totalDistance: Float): AnimationOp {
         override fun progress(fraction: Float) {
             progressMove(this, fraction)
         }
     }
 
-    inner class MoveResizeAnimation(cardIdx: Int,
-                              startX: Int, startY: Int,
-                              distanceX: Int, distanceY: Int,
-                              val startWidth: Int, val startHeight: Int,
-                              val changeW: Int, var changeH: Int):
-            MoveAnimation(cardIdx, startX, startY, distanceX, distanceY)
+    inner class MoveResizeAnimation(cardIdx: Int, startX: Int, startY: Int,
+                                    distanceX: Int, distanceY: Int, totalDistance: Float,
+                                    val startWidth: Int, val startHeight: Int,
+                                    val changeW: Int, var changeH: Int):
+            MoveAnimation(cardIdx, startX, startY, distanceX, distanceY, totalDistance)
     {
         override fun progress(fraction: Float) {
             super.progress(fraction)

@@ -49,7 +49,7 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
                     chooseDestination(card, ncl)
                 }
 
-                val destination = if (newPile == null || newPile.first == card.pile) {
+                if (newPile == null || newPile.first == card.pile) {
                     gc.reposition(ncl)
                 } else {
                     gc.transfer(card, ncl, newPile)
@@ -58,8 +58,8 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
             }
 
             fun chooseDestination(card: CardMgr, ncl: CardLayout): Pile? {
-                if (Math.abs(ncl.x - ncl.pile.x.toFloat()) < ncl.width / 2) {
-                    // If we have moved less than half the width of a card, stay put
+                if (Math.abs(ncl.x - ncl.pile.x.toFloat()) < ncl.width / 3) {
+                    // If we have moved less than 1/3 the width of a card, stay put
                     return null
                 }
                 var ret: Pile? = null
