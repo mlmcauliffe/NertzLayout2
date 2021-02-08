@@ -17,7 +17,15 @@ class TurnPileMgr: PileMgr(true) {
         return toTurn
     }
 
+    fun undoTurn(count: Int) {
+        release(invisibleCards, count)
+    }
+
     fun reset() {
-        release(invisibleCards)
+        releaseAll(invisibleCards)
+    }
+
+    fun undoReset() {
+        acceptAll(invisibleCards)
     }
 }

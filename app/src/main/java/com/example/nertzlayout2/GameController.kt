@@ -10,6 +10,10 @@ class GameController(val game: Game, val layout: GameLayout) {
         val NertzPileCards = 13
     }
 
+    interface Undo {
+        fun apply()
+    }
+
     val cards = mutableListOf<Card>()
     val nertzPile: Pile
     val acePiles: List<Pile>
@@ -65,34 +69,27 @@ class GameController(val game: Game, val layout: GameLayout) {
         return layout.abovePlayerTop(view)
     }
 
-    fun beginUIOperation(ncl: CardLayout?) {
-        if (animationInFlight != null) {
-            if (ncl == cardInFlight) {
-                animationInFlight!!.stop()
-            } else {
-                animationInFlight!!.finish()
-            }
-            animationInFlight = null
-        }
-        cardInFlight = ncl
-    }
-
     fun setUndo(undo: Undo?) {
         toUndo = undo
     }
 
-    fun hit(): Boolean {
-        beginUIOperation(null)
+    val undoable: Boolean get() = toUndo != null
 
-        if (turnPile.allVisible()) {
-            turnPile.reset()
-        } else {
-            turnPile.turn()
-            turnPile.reposition()
+    fun beginUIOperation(ncl: CardLayout?) {
+        val anim = animationInFlight
+        animationInFlight = null
+        if (anim != null) {
+            if (ncl == cardInFlight) {
+                // If the user caught the current in-flight card, stop the animation and allow
+                // them to continue their move
+                anim.stop()
+            } else {
+                // If the user touched a different card than the one in flight, finish the
+                // animation so they can proceed to the next operation
+                anim.finish()
+            }
         }
-        hitPileTop.setEmpty(turnPile.allVisible())
-        setUndo(null)
-        return false
+        cardInFlight = ncl
     }
 
     fun reposition(ncl: CardLayout) {
@@ -102,34 +99,63 @@ class GameController(val game: Game, val layout: GameLayout) {
         animationInFlight = animator
     }
 
-    fun transfer(card: CardMgr, ncl: CardLayout, pile: Pile): Boolean {
-        setUndo(CardMoveUndo(card, ncl, Pile(card.pile, ncl.pile)))
+    fun transfer(card: CardMgr, ncl: CardLayout, pile: Pile) {
+        beginUIOperation(ncl)
+        setUndo(UndoTransfer(card, ncl, Pile(card.pile, ncl.pile)))
         pile.transfer(card, ncl)
         reposition(ncl)
-        return true
     }
 
-    fun undo(): Boolean {
-        with (toUndo ?: return false) {
-            val animator = apply()
-            if (animator != null) {
-                animator.start()
-                animationInFlight = animator
-            }
+    fun hit() {
+        beginUIOperation(null)
+
+        if (turnPile.allVisible()) {
+            turnPile.reset()
+            setUndo(UndoReset())
+        } else {
+            val count = turnPile.turn()
+            turnPile.reposition()
+            setUndo(UndoHit(count))
         }
-        setUndo(null)
-        return false
+        hitPileTop.setEmpty(turnPile.allVisible())
     }
 
-    inner class CardMoveUndo(val card: CardMgr, var ncl: CardLayout, val orig: Pile): Undo {
+    fun undoReset() {
+        beginUIOperation(null)
+        turnPile.undoReset()
+        hitPileTop.setEmpty(turnPile.allVisible())
+    }
+
+    fun undoHit(count: Int) {
+        beginUIOperation(null)
+        turnPile.undoTurn(count)
+        hitPileTop.setEmpty(turnPile.allVisible())
+    }
+
+    fun undo() {
+        val undo = toUndo
+        setUndo(null)
+        if (undo != null) {
+            undo.apply()
+        }
+    }
+
+    inner class UndoTransfer(val card: CardMgr, var ncl: CardLayout, val orig: Pile): Undo {
         constructor(card: CardMgr, ncl: CardLayout): this(card, ncl, Pile(card.pile, ncl.pile))
 
-        override fun apply(): CardAnimator {
-            beginUIOperation(ncl)
-            orig.first.transfer(card)
-            orig.second.transfer(ncl)
-            val anim = orig.second.animateTransfer(ncl)
-            return CardAnimator(anim)
+        override fun apply() {
+            transfer(card, ncl, orig)
+        }
+    }
+
+    inner class UndoReset(): Undo {
+        override fun apply() {
+            undoReset()
+        }
+    }
+    inner class UndoHit(val count: Int): Undo {
+        override fun apply() {
+            undoHit(count)
         }
     }
 }

@@ -50,8 +50,20 @@ open class PileMgr(val isSource: Boolean) {
         }
     }
 
-    fun release(toPile: ArrayList<CardMgr>) {
-        toPile.addAll(cards)
-        cards.clear()
+    fun acceptAll(fromPile: ArrayList<CardMgr>) {
+        accept(fromPile, fromPile.size)
+    }
+
+    fun release(toPile: ArrayList<CardMgr>, count: Int) {
+        for (idx in 0 until count) {
+            cards.removeLast().let {
+                it.posInPile = toPile.size
+                toPile.add(0, it)
+            }
+        }
+    }
+
+    fun releaseAll(toPile: ArrayList<CardMgr>) {
+        release(toPile, cards.size)
     }
 }

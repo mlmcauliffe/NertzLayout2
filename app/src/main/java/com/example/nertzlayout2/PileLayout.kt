@@ -12,12 +12,12 @@ fun View.resize(wi: Int, hi: Int) {
 }
 
 open class PileLayout(val parent: ViewGroup, color: Int,
-                      val x: Int, val y: Int, val width: Int, val baseHeight: Int) {
+                      val x: Int, val y: Int, val width: Int, val height: Int) {
 
     val cards = arrayListOf<CardLayout>()
     val size: Int get() = cards.size
     open val cardOffset  = 0
-    val fullHeight: Int get() = baseHeight + verticalOffset(size)
+    val pileHeight: Int get() = height + verticalOffset(size)
 
     val top: CardLayout? get() = cards.firstOrNull()
 
@@ -28,13 +28,13 @@ open class PileLayout(val parent: ViewGroup, color: Int,
             view.radius = width / CardLayout.radiusDivisor
         }
         parent.addView(view)
-        view.resize(width, baseHeight)
+        view.resize(width, height)
         positionView(view, x, y)
     }
 
     fun CardLayout(card: CardMgr): CardLayout {
         return CardLayout(parent, card, this, size).also {
-            it.resize(width, baseHeight)
+            it.resize(width, height)
             cards.add(it)
         }
     }
@@ -108,7 +108,7 @@ open class PileLayout(val parent: ViewGroup, color: Int,
     // Calculates the x- and y-distance from the given card's current location to its correction
     // location for this pile.
     fun animateTransfer(firstCard: CardLayout): MoveAnimation {
-        return if (firstCard.width == width && firstCard.height == baseHeight) {
+        return if (firstCard.width == width && firstCard.height == height) {
             MoveAnimation(firstCard.posInPile,
                     firstCard.x.toInt(),
                     firstCard.y.toInt(),
@@ -120,7 +120,7 @@ open class PileLayout(val parent: ViewGroup, color: Int,
                     x - firstCard.x.toInt(),
                     y + verticalOffset(firstCard.posInPile) - firstCard.y.toInt(),
                     firstCard.width, firstCard.height,
-                    width - firstCard.width, baseHeight - firstCard.height)
+                    width - firstCard.width, height - firstCard.height)
         }
     }
 
@@ -175,10 +175,22 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         }
     }
 
-    fun release(toPile: ArrayList<CardLayout>) {
-        for (card in cards) parent.removeView(card)
-        toPile.addAll(cards)
-        cards.clear()
+    fun acceptAll(fromPile: ArrayList<CardLayout>) {
+        accept(fromPile, fromPile.size)
+    }
+
+    fun release(toPile: ArrayList<CardLayout>, count: Int) {
+        for (idx in 0 until count) {
+            cards.removeLast().let {
+                parent.removeView(it)
+                it.posInPile = toPile.size
+                toPile.add(0, it)
+            }
+        }
+    }
+
+    fun releaseAll(toPile: ArrayList<CardLayout>) {
+        release(toPile, cards.size)
     }
 
     // Returns true if the given point falls within the boundaries of this pile given the number
@@ -186,7 +198,7 @@ open class PileLayout(val parent: ViewGroup, color: Int,
     fun contains(view: View): Boolean {
         val px = view.x + (view.width / 2)
         val py = view.y + (view.height * .1f)
-        return px >= x && px < x + width && py >= y && py < y + fullHeight
+        return px >= x && px < x + width && py >= y && py < y + pileHeight
     }
 
     // Returns the distance in pixels between this.y and the top of a card at the given position

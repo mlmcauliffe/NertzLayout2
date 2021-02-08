@@ -11,7 +11,15 @@ class TurnPileLayout(parent: ViewGroup, color: Int, x: Int, y: Int, width: Int, 
         accept(invisibleCards, toTurn)
     }
 
+    fun undoTurn(count: Int) {
+        release(invisibleCards, count)
+    }
+
     fun reset() {
-        release(invisibleCards)
+        releaseAll(invisibleCards)
+    }
+
+    fun undoReset() {
+        acceptAll(invisibleCards)
     }
 }

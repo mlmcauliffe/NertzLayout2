@@ -52,9 +52,9 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
                 val destination = if (newPile == null || newPile.first == card.pile) {
                     gc.reposition(ncl)
                 } else {
-                    val undoable = gc.transfer(card, ncl, newPile)
-                    enableUndo(undoable)
+                    gc.transfer(card, ncl, newPile)
                 }
+                enableUndo(gc.undoable)
             }
 
             fun chooseDestination(card: CardMgr, ncl: CardLayout): Pile? {
@@ -84,8 +84,8 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
         return object: View.OnTouchListener {
             override fun onTouch(p0: View, event: MotionEvent): Boolean {
                 if (event.action != MotionEvent.ACTION_DOWN) return false
-                val undoable = gc.hit()
-                enableUndo(undoable)
+                gc.hit()
+                enableUndo(gc.undoable)
                 return true
             }
         }
@@ -94,8 +94,8 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
     fun makeUndoListener(): View.OnClickListener {
         return object: View.OnClickListener {
             override fun onClick(button: View?) {
-                val undoable = gc.undo()
-                enableUndo(undoable)
+                gc.undo()
+                enableUndo(gc.undoable)
             }
         }
     }
