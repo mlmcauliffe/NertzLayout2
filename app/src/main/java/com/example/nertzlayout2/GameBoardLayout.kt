@@ -10,6 +10,7 @@ class GameBoardLayoutParams(
     val playerAspectRatio: Float,
     val numPlayerPiles: Int,
     val cascadeOverlapFraction: Float,
+    val movingCardRaiseFraction: Float,
     val aceWidthFraction: Float,
     val aceAspectRatio: Float,
     val betweenAcesAndPiles: Float
@@ -24,6 +25,7 @@ class GameBoardLayout(
     val nertzLocation: Point,
     val cascadeLocations: Array<Point>,
     val cascadeOverlapSize: Int,
+    val movingCardRaise: Int,
     val playerWidth: Int,
     val playerHeight: Int,
 
@@ -87,6 +89,9 @@ fun GameBoardLayout(width: Int, height: Int, params: GameBoardLayoutParams)
     val hitLocation = Point(turnLocation.x,
             (turnLocation.y + playerHeight + params.betweenAcesAndPiles).toInt())
 
+    val cascadeOverlapSize = (playerHeight * params.cascadeOverlapFraction).toInt()
+    val movingCardRaise = (playerHeight * params.movingCardRaiseFraction).toInt()
+
     return GameBoardLayout(
         aceLocations,
         aceWidth.toInt(),
@@ -94,7 +99,8 @@ fun GameBoardLayout(width: Int, height: Int, params: GameBoardLayoutParams)
         playerTop,
         nertzLocation,
         cascadeLocations,
-        (playerHeight * params.cascadeOverlapFraction).toInt(),
+        cascadeOverlapSize,
+        movingCardRaise,
         playerWidth.toInt(),
         playerHeight.toInt(),
         turnLocation,

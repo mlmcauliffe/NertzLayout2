@@ -12,14 +12,11 @@ fun View.resize(wi: Int, hi: Int) {
 }
 
 open class PileLayout(val parent: ViewGroup, color: Int,
-                      val x: Int, val y: Int, val width: Int, val height: Int) {
+                      val x: Int, val y: Int, val width: Int, val height: Int,
+                      private val cardOffset: Int = 0, private val movingCardRaise: Int = 0) {
 
-    val cards = arrayListOf<CardLayout>()
-    val size: Int get() = cards.size
-    open val cardOffset  = 0
-    val pileHeight: Int get() = height + verticalOffset(size)
-
-    val top: CardLayout? get() = cards.firstOrNull()
+    private val cards = arrayListOf<CardLayout>()
+    private val size: Int get() = cards.size
 
     init {
         val view = CardView(parent.context)
@@ -39,9 +36,9 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         }
     }
 
-    // Removes cards from fromPile starting with startingAt and adds them to this pile.
-    // Resizes the moved cards but does not change their positions.
-    fun transfer(fromPile: PileLayout, startingAt: Int) {
+    // Transfers cards from fromPile to this pile, starting with startingAt.
+    // Does not move or resize the transferred cards.
+    private fun transfer(fromPile: PileLayout, startingAt: Int) {
         if (BuildConfig.DEBUG && fromPile == this) {
             error("transfer: source and destination piles are the same")
         }
@@ -54,6 +51,8 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         }
     }
 
+    // Transfers the given card and the cards below it from their current pile to this pile.
+    // Does not move or resize the transferred cards.
     fun transfer(firstCard: CardLayout) {
         transfer(firstCard.pile, firstCard.posInPile)
     }
@@ -64,14 +63,15 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         view.y = y.toFloat()
     }
 
-    // Moves a card to its correct location in this pile
+    // Moves a card to its correct location for this pile. Applies the card's yOffset.
     private fun positionCard(ncl: CardLayout) {
-        positionView(ncl, x, y + verticalOffset(ncl.posInPile))
+        positionView(ncl, x, y + verticalOffset(ncl.posInPile) + ncl.yOffset)
     }
 
-    // Moves a card to its correct location relative to its predecessor
+    // Moves a card to its correct location relative to its predecessor. Compensates for the
+    // predecessor's yOffset, thereby placing this card as if its predecessor had a yOffset of 0.
     private fun positionCard(ncl: CardLayout, pred: CardLayout) {
-        positionView(ncl, pred.x.toInt(), pred.y.toInt() + cardOffset)
+        positionView(ncl, pred.x.toInt(), pred.y.toInt() - pred.yOffset + ncl.yOffset + cardOffset)
     }
 
     // Given an already-positioned card, correctly position its successors
@@ -82,6 +82,16 @@ open class PileLayout(val parent: ViewGroup, color: Int,
             positionCard(curr, prev)
             prev = curr
         }
+    }
+
+    fun beginMoveOperation(ncl: CardLayout) {
+        ncl.yOffset = -movingCardRaise
+        positionCard(ncl)
+        raise(ncl.posInPile)
+    }
+
+    fun endMoveOperation(ncl: CardLayout) {
+        ncl.yOffset = 0
     }
 
     // Move all cards starting at startingAt by the given distanceX and distanceY
@@ -105,8 +115,8 @@ open class PileLayout(val parent: ViewGroup, color: Int,
         reposition(ncl.posInPile)
     }
 
-    // Calculates the x- and y-distance from the given card's current location to its correct
-    // location for this pile.
+    // Creates a MoveAnimation object that describes the change in position, and perhaps in
+    // size, between the given card's current position and its correct position for this pile.
     fun animateTransfer(topCard: CardLayout): MoveAnimation {
         val currX = topCard.x.toInt()
         val currY = topCard.y.toInt()
@@ -189,14 +199,6 @@ open class PileLayout(val parent: ViewGroup, color: Int,
 
     fun releaseAll(toPile: ArrayList<CardLayout>) {
         release(toPile, cards.size)
-    }
-
-    // Returns true if the given point falls within the boundaries of this pile given the number
-    // of cards in the pile.
-    fun contains(view: View): Boolean {
-        val px = view.x + (view.width / 2)
-        val py = view.y + (view.height * .1f)
-        return px >= x && px < x + width && py >= y && py < y + pileHeight
     }
 
     // Returns the distance in pixels between this.y and the top of a card at the given position

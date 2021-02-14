@@ -37,14 +37,15 @@ class MainActivity : AppCompatActivity() {
     fun genParams(game: Game, dm: DisplayMetrics): GameBoardLayoutParams {
         val dpToPx = DpToPx(dm)
         return GameBoardLayoutParams(
-            dpToPx(10),
-            dpToPx(10),
-            dpToPx(80),
-            0.7f,
-            game.cascadePiles.size,
-            0.25f,
-            1.0f,
-            2f,
-            dpToPx(20))
+                dpToPx(10),
+                dpToPx(10),
+                dpToPx(80),
+                0.7f,
+                game.cascadePiles.size,
+                0.25f,
+                0.33f,
+                1.0f,
+                2f,
+                dpToPx(20))
     }
 }

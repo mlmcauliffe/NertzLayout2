@@ -39,7 +39,8 @@ fun GameLayout(parent: ViewGroup, layout: GameBoardLayout): GameLayout {
         Array<PileLayout>(layout.cascadeLocations.size) {
             val location = layout.cascadeLocations[it]
             CascadePileLayout(parent, GameLayout.PileColor, location.x, location.y,
-                layout.playerWidth, layout.playerHeight, layout.cascadeOverlapSize)
+                layout.playerWidth, layout.playerHeight,
+                layout.cascadeOverlapSize, layout.movingCardRaise)
         }, {
             val location = layout.turnLocation
             TurnPileLayout(parent, GameLayout.PileColor,

@@ -1,7 +1,6 @@
 package com.example.nertzlayout2
 
 import android.annotation.SuppressLint
-import android.content.Context
 import android.util.Log
 import android.view.*
 import android.widget.Button
@@ -15,6 +14,7 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
         }
         gc.hitPileTop.setOnTouchListener(makeHitListener())
         undoButton.setOnClickListener(makeUndoListener())
+        setUndoable()
     }
 
     fun makeCardListener(card: CardMgr, ncl: CardLayout): View.OnTouchListener {
@@ -25,7 +25,7 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
                     return false
                 }
                 gc.beginUIOperation(ncl)
-                ncl.pile.raise(ncl.posInPile)
+                ncl.pile.beginMoveOperation(ncl)
                 upFling = false
                 return true
             }
@@ -39,6 +39,7 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
                 return true
             }
             override fun onScrollEnd() {
+                ncl.pile.endMoveOperation(ncl)
                 val newPile = if ((gc.abovePlayerTop(ncl) || upFling) && card == card.pile.top) {
                     // Choose an ace pile if we have moved above the player piles
                     gc.acePiles[card.suit].let {
@@ -54,7 +55,7 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
                 } else {
                     gc.transfer(card, ncl, newPile)
                 }
-                enableUndo(gc.undoable)
+                setUndoable()
             }
 
             fun chooseDestination(card: CardMgr, ncl: CardLayout): Pile? {
@@ -85,7 +86,7 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
             override fun onTouch(p0: View, event: MotionEvent): Boolean {
                 if (event.action != MotionEvent.ACTION_DOWN) return false
                 gc.hit()
-                enableUndo(gc.undoable)
+                setUndoable()
                 return true
             }
         }
@@ -95,13 +96,13 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
         return object: View.OnClickListener {
             override fun onClick(button: View?) {
                 gc.undo()
-                enableUndo(gc.undoable)
+                setUndoable()
             }
         }
     }
 
-    fun enableUndo(undoable: Boolean) {
-        undoButton.isEnabled = undoable
+    fun setUndoable() {
+        undoButton.isEnabled = gc.undoable
     }
 
     fun log(msg: String) {

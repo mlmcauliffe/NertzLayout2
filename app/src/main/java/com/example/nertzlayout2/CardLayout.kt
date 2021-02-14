@@ -13,6 +13,12 @@ class CardLayout(parent: ViewGroup, card: CardMgr, var pile: PileLayout, var pos
         val radiusDivisor = 15f
     }
 
+    // PileLayout adds this value to this view's Y coordinate when placing it on its pile. However,
+    // it will place the following card in its pile as if it had ignored this card's yOffset. Hence,
+    // this value (when negative) causes this card to "stick up" relative to the other cards in
+    // its pile.
+    var yOffset = 0
+
     init {
         val view = LayoutInflater.from(context).inflate(R.layout.nertz_card, this)
         with (view.findViewById(R.id.title_value) as TextView) {
