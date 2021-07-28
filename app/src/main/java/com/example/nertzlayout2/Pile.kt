@@ -18,3 +18,11 @@ fun Pile.reposition(startingAt: Int = 0) {
 fun Pile.reposition(ncl: CardLayout) {
     second.reposition(ncl)
 }
+
+fun Pile.distanceSQ(ncl: CardLayout): Int {
+    return second.distanceSQ(ncl)
+}
+
+fun Pile.distanceSQ(pile: Pile): Int {
+    return second.distanceSQ(pile)
+}

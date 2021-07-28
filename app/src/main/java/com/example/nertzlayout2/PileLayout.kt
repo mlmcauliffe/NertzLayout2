@@ -206,4 +206,20 @@ open class PileLayout(val parent: ViewGroup, color: Int,
     open fun verticalOffset(posInPile: Int): Int {
         return posInPile * cardOffset
     }
+
+    // Returns the square of the distance from the given card to this pile
+    fun distanceSQ(ncl: CardLayout): Int {
+        return distanceSQ(x, ncl.x.toInt(),
+            y + verticalOffset(size), ncl.y.toInt())
+    }
+
+    // Returns the square of the distance between this pile and the given pile
+    fun distanceSQ(pile: PileLayout): Int {
+        return distanceSQ(x, pile.x,
+            y + verticalOffset(size), pile.y + pile.verticalOffset(pile.size))
+    }
+
+    fun distanceSQ(pile: Pile): Int {
+        return distanceSQ(pile.second)
+    }
 }

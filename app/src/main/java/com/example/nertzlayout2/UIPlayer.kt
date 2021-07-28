@@ -19,62 +19,86 @@ class UIPlayer(val gc: GameController, val undoButton: Button) {
 
     fun makeCardListener(card: CardMgr, ncl: CardLayout): View.OnTouchListener {
         val listener = FullOnGestureListenerAdapter(object: FullOnGestureListener() {
-            var upFling = false
+            var ptrStartX = 0
+            var ptrStartY = 0
+            var ptrEndX = 0
+            var ptrEndY = 0
             override fun onDown(e: MotionEvent): Boolean {
                 if (!card.pile.isMovable(card)) {
                     return false
                 }
                 gc.beginUIOperation(ncl)
                 ncl.pile.beginMoveOperation(ncl)
-                upFling = false
+                ptrStartX = e.rawX.toInt()
+                ptrStartY = e.rawY.toInt()
+
+                // set ptrEndX/Y in case onScroll is never called (i.e., touch and release)
+                ptrEndX = ptrStartX
+                ptrEndY = ptrStartY
                 return true
             }
             override fun onScroll(e1: MotionEvent, e2: MotionEvent, distanceX: Float, distanceY: Float): Boolean {
+                ptrEndX = e2.rawX.toInt()
+                ptrEndY = e2.rawY.toInt()
                 ncl.pile.move(ncl.posInPile, distanceX.toInt(), distanceY.toInt())
-                return true
-            }
-            override fun onFling(e1: MotionEvent?, e2: MotionEvent?,
-                                 velocityX: Float, velocityY: Float): Boolean {
-                upFling = (velocityX >= 0 && velocityY < 0 && -velocityY > velocityX)
                 return true
             }
             override fun onScrollEnd() {
                 ncl.pile.endMoveOperation(ncl)
-                val newPile = if ((gc.abovePlayerTop(ncl) || upFling) && card == card.pile.top) {
-                    // Choose an ace pile if we have moved above the player piles
-                    gc.acePiles[card.suit].let {
-                        if (it.first.accepts(card)) it else null
-                    }
-                } else {
-                    // Choose a cascade pile if we can
-                    chooseDestination(card, ncl)
-                }
-
-                if (newPile == null || newPile.first == card.pile) {
+                val destPile = chooseDestPile(card, ncl)
+                if (destPile == null || destPile.first == card.pile) {
+                    // No new pile accepted card or card was moved to its original pile
                     gc.reposition(ncl)
                 } else {
-                    gc.transfer(card, ncl, newPile)
+                    // Move card to its new destination
+                    gc.transfer(card, ncl, destPile)
                 }
                 setUndoable()
             }
-
-            fun chooseDestination(card: CardMgr, ncl: CardLayout): Pile? {
-                if (Math.abs(ncl.x - ncl.pile.x.toFloat()) < ncl.width / 3) {
-                    // If we have moved less than 1/3 the width of a card, stay put
+            fun chooseDestPile(card: CardMgr, ncl: CardLayout): Pile? {
+                // If the card didn't move at least 1/4 of its width/height, leave it alone
+                val movedX = Math.abs(ptrEndX - ptrStartX)
+                val movedY = Math.abs(ptrEndY - ptrStartY)
+                val thresholdX = ncl.width / 4
+                val thresholdY = ncl.height / 4
+                if (movedX < thresholdX && movedY < thresholdY) {
                     return null
                 }
                 var ret: Pile? = null
                 var minDistance = 0
                 for (pile in gc.cascadePiles) {
                     if (!pile.accepts(card)) {
+                        // (this check also means we don't have to explicitly check whether pile is
+                        // card's originating pile -- a pile never accepts its own top card)
                         continue
                     }
-                    val distance = Math.abs(ncl.x.toInt() - pile.second.x)
+                    val distance = pile.distanceSQ(ncl)
+                    val origDistance = ncl.pile.distanceSQ(pile)
+                    if (distance > origDistance) {
+                        // if the card is now farther away from pile than it began, skip the pile
+                        continue
+                    }
+                    // find the closest pile to our new location
                     if (ret == null || distance < minDistance) {
                         ret = pile
                         minDistance = distance
                     }
                 }
+
+                if (card.pile.top == card) {
+                    gc.acePiles[card.suit].let {
+                        if (it.accepts(card)) {
+                            val distance = it.distanceSQ(ncl)
+                            val origDistance = ncl.pile.distanceSQ(it)
+                            if (distance <= origDistance &&
+                                (ret == null || distance < minDistance || gc.abovePlayerTop(ncl))) {
+                                ret = it
+                                minDistance = distance
+                            }
+                        }
+                    }
+                }
+
                 return ret
             }
         })
