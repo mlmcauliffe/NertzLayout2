@@ -1,5 +1,6 @@
 package com.example.nertzlayout2
 
+import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import androidx.cardview.widget.CardView
@@ -11,22 +12,37 @@ fun View.resize(wi: Int, hi: Int) {
     }
 }
 
-open class PileLayout(val parent: ViewGroup, color: Int,
+open class PileLayout(val parent: ViewGroup,
                       val x: Int, val y: Int, val width: Int, val height: Int,
-                      private val cardOffset: Int = 0, private val movingCardRaise: Int = 0) {
+                      private val cardOffset: Int, private val movingCardRaise: Int,
+                      base: CardView) {
+
+    companion object {
+        fun createBaseView(context: Context, color: Int): CardView {
+            return CardView(context).also { it.setCardBackgroundColor(color) }
+        }
+    }
+
+    constructor(parent: ViewGroup, color: Int, x: Int, y: Int, width: Int, height: Int):
+            this(parent, x, y, width, height, 0, 0,
+            createBaseView(parent.context, color))
+
+    constructor(parent: ViewGroup, color: Int, x: Int, y: Int, width: Int, height: Int,
+                cardOffset: Int, movingCardRaise: Int):
+            this(parent, x, y, width, height, cardOffset, movingCardRaise,
+            createBaseView(parent.context, color))
+
+    constructor(parent: ViewGroup, x: Int, y: Int, width: Int, height: Int, base: CardView):
+            this(parent, x, y, width, height, 0, 0, base)
 
     private val cards = arrayListOf<CardLayout>()
     private val size: Int get() = cards.size
 
     init {
-        val view = CardView(parent.context)
-        if (color != 0) {
-            view.setCardBackgroundColor(color)
-            view.radius = width / CardLayout.radiusDivisor
-        }
-        parent.addView(view)
-        view.resize(width, height)
-        positionView(view, x, y)
+        base.radius = width / CardLayout.radiusDivisor
+        parent.addView(base)
+        base.resize(width, height)
+        positionView(base, x, y)
     }
 
     fun CardLayout(card: CardMgr): CardLayout {

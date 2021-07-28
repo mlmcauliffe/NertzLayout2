@@ -33,7 +33,7 @@ fun GameLayout(parent: ViewGroup, layout: GameBoardLayout): GameLayout {
                     location.x, location.y, layout.aceWidth, layout.aceHeight)
         }, {
             val location = layout.nertzLocation
-            PileLayout(parent, GameLayout.PileColor,
+            NertzPileLayout(parent,
                     location.x, location.y, layout.playerWidth, layout.playerHeight)
         }(),
         Array<PileLayout>(layout.cascadeLocations.size) {
